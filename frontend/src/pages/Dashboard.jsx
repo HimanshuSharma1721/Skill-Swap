@@ -6,19 +6,21 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [matches, setMatches] = useState([]);
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+
   const [editName, setEditName] = useState("");
   const [editSkillsOffered, setEditSkillsOffered] = useState("");
   const [editSkillsWanted, setEditSkillsWanted] = useState("");
 
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
   useEffect(() => {
     if (!token) {
-      navigate("/login");
+      navigate("/");
       return;
     }
+
     fetchProfile();
     fetchMatches();
   }, []);
@@ -26,19 +28,25 @@ function Dashboard() {
   const fetchProfile = async () => {
     try {
       const res = await axios.get("http://localhost:5000/profile", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
       setUser(res.data);
     } catch (err) {
-      navigate("/login");
+      navigate("/");
     }
   };
 
   const fetchMatches = async () => {
     try {
       const res = await axios.get("http://localhost:5000/match", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
       setMatches(res.data);
     } catch (err) {
       console.log(err);
@@ -46,384 +54,567 @@ function Dashboard() {
   };
 
   const sendSwapRequest = async (toId) => {
-    console.log("Sending swap request to:", toId);
     try {
       await axios.post(
         "http://localhost:5000/swap-request",
         { to: toId },
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-      setMessage("Swap request sent! ✅");
+
+      setMessage("Swap request sent successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (err) {
-      setMessage(err.response.data.message);
+      setMessage(err.response?.data?.message || "Something went wrong.");
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/");
   };
+
   const handleEditSave = async () => {
     try {
       const res = await axios.put(
         "http://localhost:5000/profile",
         {
           name: editName,
-          skillsOffered: editSkillsOffered.split(",").map((s) => s.trim()),
-          skillsWanted: editSkillsWanted.split(",").map((s) => s.trim()),
+          skillsOffered: editSkillsOffered
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
+
+          skillsWanted: editSkillsWanted
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean),
         },
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
       setUser(res.data.user);
       setEditing(false);
-      setMessage("Profile updated! ✅");
+
+      setMessage("Profile updated successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (err) {
-      setMessage(err.response.data.message);
+      setMessage(err.response?.data?.message || "Update failed.");
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
-  if (!user)
+  const startEditing = () => {
+    setEditing(true);
+    setEditName(user.name);
+    setEditSkillsOffered(user.skillsOffered.join(", "));
+    setEditSkillsWanted(user.skillsWanted.join(", "));
+  };
+
+  if (!user) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: "#1A1A2E" }}
+        style={{ backgroundColor: "#F4F5EF" }}
       >
-        <p className="text-white text-xl">Loading...</p>
+        <div className="text-center">
+          <div
+            className="w-10 h-10 rounded-full border-4 border-black/10 border-t-black animate-spin mx-auto mb-4"
+          />
+          <p className="text-sm font-medium text-[#11130F]/60">
+            Loading your workspace...
+          </p>
+        </div>
       </div>
     );
+  }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#1A1A2E" }}>
-      {/* Glow effects */}
+    <div
+      className="min-h-screen text-[#11130F] relative overflow-hidden"
+      style={{ backgroundColor: "#F4F5EF" }}
+    >
+      {/* Background Grid */}
       <div
+        className="fixed inset-0 pointer-events-none opacity-[0.16]"
         style={{
-          position: "fixed",
-          width: "400px",
-          height: "400px",
-          borderRadius: "50%",
-          backgroundColor: "#A78BFA",
-          filter: "blur(150px)",
-          opacity: 0.07,
-          top: "0%",
-          right: "0%",
-          pointerEvents: "none"
-        }}
-      />
-      <div
-        style={{
-          position: "fixed",
-          width: "400px",
-          height: "400px",
-          borderRadius: "50%",
-          backgroundColor: "#F472B6",
-          filter: "blur(150px)",
-          opacity: 0.07,
-          bottom: "0%",
-          left: "0%",
-          pointerEvents: "none"
+          backgroundImage: `
+            linear-gradient(rgba(17,19,15,0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(17,19,15,0.08) 1px, transparent 1px)
+          `,
+          backgroundSize: "80px 80px",
+          maskImage:
+            "linear-gradient(to bottom, black 0%, transparent 85%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, black 0%, transparent 85%)",
         }}
       />
 
-      {/* Navbar */}
-      <nav
+      {/* Decorative lime blur */}
+      <div
+        className="fixed pointer-events-none rounded-full blur-[120px] opacity-30"
         style={{
-          backgroundColor: "rgba(42,42,62,0.8)",
-          backdropFilter: "blur(10px)",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          width: "300px",
+          height: "300px",
+          backgroundColor: "#D7F36B",
+          top: "-100px",
+          right: "-80px",
         }}
-        className="sticky top-0 z-50 flex items-center justify-between px-12 py-4"
-      >
-        <h1 className="text-2xl font-bold">
-          <span style={{ color: "#A78BFA" }}>Skill</span>
-          <span style={{ color: "#F472B6" }}>-Swap.</span>
-        </h1>
-        <div className="flex items-center gap-4">
-          <a
-            href="/swap-requests"
-            className="text-gray-400 hover:text-white transition"
+      />
+
+      {/* NAVBAR */}
+      <nav className="relative z-40 border-b border-black/10 bg-[#F4F5EF]/80 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 h-20 flex items-center justify-between">
+          
+          {/* Logo */}
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-3"
           >
-            Swap Requests
-          </a>
+            <div className="w-10 h-10 rounded-full bg-[#11130F] text-[#D7F36B] flex items-center justify-center font-black text-lg">
+              S
+            </div>
+
+            <div className="text-left">
+              <div className="font-black tracking-tight text-lg leading-none">
+                Skill Swap
+              </div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-black/45 mt-1">
+                Learn by teaching
+              </div>
+            </div>
+          </button>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <button
+              onClick={() => navigate("/Dashboard")}
+              className="text-[#11130F]"
+            >
+              Dashboard
+            </button>
+
+            <button
+              onClick={() => navigate("/swap-requests")}
+              className="text-black/50 hover:text-[#11130F] transition"
+            >
+              Swap Requests
+            </button>
+          </div>
+
+          {/* Right */}
           <button
             onClick={handleLogout}
-            className="px-4 py-2 rounded-full text-sm font-semibold text-white"
-            style={{ background: "linear-gradient(90deg, #7C3AED, #BE185D)" }}
+            className="px-5 py-2.5 rounded-full bg-[#11130F] text-[#F4F5EF] text-sm font-bold hover:translate-y-[-1px] transition"
           >
-            Logout
+            Log out
           </button>
         </div>
       </nav>
 
-      <div className="px-12 py-8">
-        {/* Toast message */}
+      {/* MAIN */}
+      <main className="relative z-10 max-w-7xl mx-auto px-5 sm:px-8 lg:px-10 py-10 lg:py-14">
+
+        {/* Toast */}
         {message && (
-          <div
-            className="fixed top-20 right-8 px-6 py-3 rounded-xl text-white text-sm font-semibold z-50"
-            style={{ background: "linear-gradient(90deg, #7C3AED, #BE185D)" }}
-          >
-            {message}
+          <div className="fixed top-24 right-5 sm:right-8 z-50 max-w-sm">
+            <div className="bg-[#11130F] text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-[#D7F36B]" />
+              <p className="text-sm font-medium">{message}</p>
+            </div>
           </div>
         )}
 
-        {/* Profile Section */}
-        {/* Profile Section */}
-        <div
-          className="mb-10 p-8 rounded-2xl"
-          style={{
-            backgroundColor: "#2A2A3E",
-            border: "1px solid rgba(255,255,255,0.05)",
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              {/* Avatar */}
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white"
-                style={{
-                  background: "linear-gradient(135deg, #7C3AED, #BE185D)",
-                }}
-              >
-                {user.name.charAt(0).toUpperCase()}
+        {/* HEADER */}
+        <section className="mb-10">
+          <p className="text-xs uppercase tracking-[0.2em] font-bold text-[#78911F] mb-3">
+            Your workspace
+          </p>
+
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-black tracking-[-0.04em] leading-tight">
+                Hey, {user.name.split(" ")[0]}.
+                <br />
+                <span className="text-black">
+                  Ready to swap some skills?
+                </span>
+              </h1>
+
+              <p className="mt-4 text-black/55 max-w-xl leading-relaxed">
+                Find people who want what you know and know what you want to
+                learn.
+              </p>
+            </div>
+
+            <button
+              onClick={() => navigate("/swap-requests")}
+              className="self-start lg:self-auto px-6 py-3 rounded-full bg-[#D7F36B] border border-[#11130F]/10 font-bold text-sm hover:-translate-y-0.5 transition shadow-sm"
+            >
+              View swap requests →
+            </button>
+          </div>
+        </section>
+
+        {/* STATS */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <StatCard
+            number={user.skillsOffered.length}
+            label="Skills you offer"
+          />
+
+          <StatCard
+            number={user.skillsWanted.length}
+            label="Skills you want"
+          />
+
+          <StatCard
+            number={matches.length}
+            label="Potential matches"
+          />
+        </section>
+
+        {/* PROFILE + QUICK INFO */}
+        <section className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 mb-14">
+
+          {/* PROFILE CARD */}
+          <div className="rounded-[2rem] bg-white/70 border border-black/10 shadow-[0_20px_60px_rgba(17,19,15,0.06)] p-6 sm:p-8 backdrop-blur-xl">
+
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5 mb-8">
+
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#11130F] text-[#D7F36B] flex items-center justify-center text-2xl font-black">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+
+                <div>
+                  {editing ? (
+                    <input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="text-2xl font-black bg-transparent border-b-2 border-[#78911F] outline-none w-full max-w-[250px]"
+                    />
+                  ) : (
+                    <h2 className="text-2xl font-black tracking-tight">
+                      {user.name}
+                    </h2>
+                  )}
+
+                  <p className="text-sm text-black/45 mt-1">
+                    {user.email}
+                  </p>
+                </div>
               </div>
 
+              {!editing ? (
+                <button
+                  onClick={startEditing}
+                  className="px-4 py-2 rounded-full border border-black/10 bg-white text-sm font-bold hover:bg-black/5 transition"
+                >
+                  Edit profile
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleEditSave}
+                    className="px-4 py-2 rounded-full bg-[#11130F] text-white text-sm font-bold"
+                  >
+                    Save
+                  </button>
+
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="px-4 py-2 rounded-full border border-black/10 text-sm font-bold"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* SKILLS */}
+            <div className="grid sm:grid-cols-2 gap-6">
+
+              {/* OFFERED */}
               <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs uppercase tracking-[0.18em] font-bold text-black/40">
+                    I can teach
+                  </p>
+
+                  <span className="text-xs font-bold text-[#78911F]">
+                    {user.skillsOffered.length}
+                  </span>
+                </div>
+
                 {editing ? (
                   <input
-                    className="bg-transparent text-white text-2xl font-bold outline-none border-b"
-                    style={{ borderColor: "#A78BFA" }}
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+                    value={editSkillsOffered}
+                    onChange={(e) => setEditSkillsOffered(e.target.value)}
+                    placeholder="React, JavaScript, Python"
+                    className="w-full bg-[#F4F5EF] border border-black/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#78911F]"
                   />
                 ) : (
-                  <h2 className="text-2xl font-bold text-white">{user.name}</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {user.skillsOffered.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-2 rounded-full bg-[#D7F36B]/60 border border-[#78911F]/20 text-sm font-semibold"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 )}
-                <p className="text-gray-400 text-sm">{user.email}</p>
+              </div>
+
+              {/* WANTED */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs uppercase tracking-[0.18em] font-bold text-black/40">
+                    I want to learn
+                  </p>
+
+                  <span className="text-xs font-bold text-[#78911F]">
+                    {user.skillsWanted.length}
+                  </span>
+                </div>
+
+                {editing ? (
+                  <input
+                    value={editSkillsWanted}
+                    onChange={(e) => setEditSkillsWanted(e.target.value)}
+                    placeholder="Java, Node.js, Design"
+                    className="w-full bg-[#F4F5EF] border border-black/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#78911F]"
+                  />
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {user.skillsWanted.map((skill, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-2 rounded-full bg-black/[0.04] border border-black/10 text-sm font-semibold"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Edit / Save Button */}
-            {editing ? (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleEditSave}
-                  className="px-5 py-2 rounded-full text-sm font-bold text-white"
-                  style={{
-                    background: "linear-gradient(90deg, #7C3AED, #BE185D)",
-                  }}
-                >
-                  Save ✅
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="px-5 py-2 rounded-full text-sm font-bold"
-                  style={{
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                    color: "#ef4444",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  setEditing(true);
-                  setEditName(user.name);
-                  setEditSkillsOffered(user.skillsOffered.join(", "));
-                  setEditSkillsWanted(user.skillsWanted.join(", "));
-                }}
-                className="px-5 py-2 rounded-full text-sm font-bold"
-                style={{
-                  backgroundColor: "rgba(124,58,237,0.2)",
-                  color: "#A78BFA",
-                  border: "1px solid rgba(124,58,237,0.3)",
-                }}
-              >
-                Edit Profile ✏️
-              </button>
-            )}
           </div>
 
-          <div className="flex gap-8 mt-6">
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">
-                Skills Offered
+          {/* QUICK CARD */}
+          <div className="rounded-[2rem] bg-[#11130F] text-white p-7 sm:p-8 overflow-hidden relative">
+
+            <div
+              className="absolute w-56 h-56 rounded-full bg-[#D7F36B] blur-[100px] opacity-20 -right-20 -top-20"
+            />
+
+            <div className="relative">
+              <p className="text-xs uppercase tracking-[0.2em] text-[#D7F36B] font-bold mb-4">
+                How Skill Swap works
               </p>
-              {editing ? (
-                <input
-                  className="w-full bg-transparent text-white outline-none border-b p-2"
-                  style={{ borderColor: "rgba(255,255,255,0.1)" }}
-                  value={editSkillsOffered}
-                  onChange={(e) => setEditSkillsOffered(e.target.value)}
-                  placeholder="JavaScript, Python, C++"
-                />
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {user.skillsOffered.map((skill, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 rounded-full text-sm font-semibold"
-                      style={{
-                        backgroundColor: "rgba(124,58,237,0.2)",
-                        color: "#A78BFA",
-                        border: "1px solid rgba(124,58,237,0.3)",
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              )}
+
+              <h3 className="text-3xl font-black tracking-tight leading-tight">
+                Your skills are
+                <br />
+                your currency.
+              </h3>
+
+              <p className="text-white/55 text-sm leading-relaxed mt-4 max-w-sm">
+                You teach something you're good at. Someone teaches you
+                something you want to learn. No money involved.
+              </p>
+
+              <div className="mt-7 space-y-4">
+                <Step number="01" text="Find someone with complementary skills" />
+                <Step number="02" text="Send them a swap request" />
+                <Step number="03" text="Start learning together" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* MATCHES */}
+        <section>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-[#78911F] mb-2">
+                Discover
+              </p>
+
+              <h2 className="text-3xl font-black tracking-tight">
+                Your matches
+              </h2>
             </div>
 
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">
-                Skills Wanted
+            <p className="text-sm text-black/45">
+              {matches.length} {matches.length === 1 ? "person" : "people"} found
+            </p>
+          </div>
+
+          {matches.length === 0 ? (
+            <div className="rounded-[2rem] bg-white/60 border border-black/10 p-12 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#D7F36B] mx-auto flex items-center justify-center text-2xl mb-5">
+                ✦
+              </div>
+
+              <h3 className="text-xl font-black">
+                No matches yet
+              </h3>
+
+              <p className="text-sm text-black/50 mt-2 max-w-md mx-auto">
+                Add more skills to your profile and we'll help you discover
+                people who complement what you know.
               </p>
-              {editing ? (
-                <input
-                  className="w-full bg-transparent text-white outline-none border-b p-2"
-                  style={{ borderColor: "rgba(255,255,255,0.1)" }}
-                  value={editSkillsWanted}
-                  onChange={(e) => setEditSkillsWanted(e.target.value)}
-                  placeholder="React, Node.js, Tailwind"
-                />
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {user.skillsWanted.map((skill, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1 rounded-full text-sm font-semibold"
-                      style={{
-                        backgroundColor: "rgba(244,114,182,0.2)",
-                        color: "#F472B6",
-                        border: "1px solid rgba(244,114,182,0.3)",
-                      }}
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              )}
+
+              <button
+                onClick={startEditing}
+                className="mt-6 px-6 py-3 rounded-full bg-[#11130F] text-white text-sm font-bold"
+              >
+                Add more skills
+              </button>
             </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+              {matches.map((match) => (
+                <MatchCard
+                  key={match._id}
+                  match={match}
+                  onSwap={sendSwapRequest}
+                  onRatings={() => navigate(`/ratings/${match._id}`)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+/* ---------------- COMPONENTS ---------------- */
+
+function StatCard({ number, label }) {
+  return (
+    <div className="bg-white/65 border border-black/10 rounded-2xl p-5 backdrop-blur-xl">
+      <p className="text-3xl font-black tracking-tight">
+        {number}
+      </p>
+
+      <p className="text-sm text-black/45 mt-1">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function Step({ number, text }) {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-[#D7F36B]">
+        {number}
+      </div>
+
+      <p className="text-sm text-white/70">
+        {text}
+      </p>
+    </div>
+  );
+}
+
+function MatchCard({ match, onSwap, onRatings }) {
+  return (
+    <div className="group bg-white/70 border border-black/10 rounded-[1.75rem] p-6 backdrop-blur-xl hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(17,19,15,0.08)] transition-all duration-300">
+
+      {/* Person */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-[#11130F] text-[#D7F36B] flex items-center justify-center text-lg font-black">
+            {match.name.charAt(0).toUpperCase()}
+          </div>
+
+          <div>
+            <h3 className="font-black">
+              {match.name}
+            </h3>
+
+            <p className="text-xs text-black/40 mt-0.5">
+              Skill swap partner
+            </p>
           </div>
         </div>
 
-        {/* Matches Section */}
-        <h3 className="text-xl font-bold text-white mb-6">
-          Your Matches 🎯
-          <span className="ml-3 text-sm font-normal text-gray-400">
-            {matches.length} people found
-          </span>
-        </h3>
+        <div className="w-8 h-8 rounded-full bg-[#D7F36B] flex items-center justify-center text-sm">
+          ↗
+        </div>
+      </div>
 
-        {matches.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-gray-500 text-lg">No matches found yet 😔</p>
-            <p className="text-gray-600 text-sm mt-2">
-              Add more skills to find matches!
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-6">
-            {matches.map((match) => (
-              <div
-                key={match._id}
-                className="p-6 rounded-2xl flex flex-col gap-4"
-                style={{
-                  backgroundColor: "#2A2A3E",
-                  border: "1px solid rgba(255,255,255,0.05)",
-                }}
+      {/* Exchange */}
+      <div className="space-y-4">
+
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-black/35 mb-2">
+            They can teach
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            {match.skillsOffered.map((skill, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 rounded-full bg-[#D7F36B]/50 border border-[#78911F]/15 text-xs font-semibold"
               >
-                {/* Match Avatar */}
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold text-white"
-                    style={{
-                      background: "linear-gradient(135deg, #7C3AED, #BE185D)",
-                    }}
-                  >
-                    {match.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h4 className="text-white font-semibold">{match.name}</h4>
-                    <p className="text-gray-500 text-xs">{match.email}</p>
-                  </div>
-                </div>
-
-                {/* Skills */}
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">
-                    Offers
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {match.skillsOffered.map((skill, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 rounded-full text-xs"
-                        style={{
-                          backgroundColor: "rgba(124,58,237,0.2)",
-                          color: "#A78BFA",
-                        }}
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">
-                    Wants
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {match.skillsWanted.map((skill, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 rounded-full text-xs"
-                        style={{
-                          backgroundColor: "rgba(244,114,182,0.2)",
-                          color: "#F472B6",
-                        }}
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex gap-2 mt-auto">
-                  <button
-                    onClick={() => sendSwapRequest(match._id)}
-                    className="flex-1 py-2 rounded-full text-sm font-bold text-white"
-                    style={{
-                      background: "linear-gradient(90deg, #7C3AED, #BE185D)",
-                    }}
-                  >
-                    Swap 🤝
-                  </button>
-                  <button
-                    onClick={() => navigate(`/ratings/${match._id}`)}
-                    className="flex-1 py-2 rounded-full text-sm font-bold"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.05)",
-                      color: "#A78BFA",
-                      border: "1px solid rgba(124,58,237,0.3)",
-                    }}
-                  >
-                    Ratings ⭐
-                  </button>
-                </div>
-              </div>
+                {skill}
+              </span>
             ))}
           </div>
-        )}
+        </div>
+
+        <div className="h-px bg-black/10" />
+
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-black/35 mb-2">
+            They want to learn
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            {match.skillsWanted.map((skill, index) => (
+              <span
+                key={index}
+                className="px-3 py-1.5 rounded-full bg-black/[0.035] border border-black/10 text-xs font-semibold"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2 mt-7">
+
+        <button
+          onClick={() => onSwap(match._id)}
+          className="flex-1 py-3 rounded-xl bg-[#11130F] text-white text-sm font-bold hover:bg-[#78911F] hover:text-white transition"
+        >
+          Swap
+        </button>
+
+        <button
+          onClick={onRatings}
+          className="px-4 py-3 rounded-xl border border-black/10 text-sm font-bold hover:bg-black/5 transition"
+        >
+          ★
+        </button>
+
       </div>
     </div>
   );
